@@ -1,0 +1,5 @@
+{
+  "name": "NovaPlayer AI",
+  "description": "A high-performance, AI-enhanced local video player with precise playback controls, keyboard shortcuts, and frame-based intelligence powered by Gemini.",
+  "requestFramePermissions": []
+}
