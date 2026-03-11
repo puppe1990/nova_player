@@ -5,8 +5,3 @@ export interface VideoMetadata {
   type: string;
   url: string;
 }
-
-export interface AIAnalysis {
-  summary: string;
-  timestamp: number;
-}

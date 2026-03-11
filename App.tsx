@@ -1,15 +1,12 @@
 
-import React, { useState, useCallback, useRef } from 'react';
-import { Upload, Play, Info, Layers, Zap, X } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Play, Zap, X } from 'lucide-react';
 import VideoPlayer from './components/VideoPlayer';
 import FileUpload from './components/FileUpload';
-import { VideoMetadata, AIAnalysis } from './types';
-import { analyzeVideoFrame } from './services/geminiService';
+import { VideoMetadata } from './types';
 
 const App: React.FC = () => {
   const [video, setVideo] = useState<VideoMetadata | null>(null);
-  const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleFileSelect = (file: File) => {
@@ -20,39 +17,11 @@ const App: React.FC = () => {
       type: file.type,
       url: url
     });
-    setAnalysis(null);
   };
 
   const clearVideo = () => {
     if (video?.url) URL.revokeObjectURL(video.url);
     setVideo(null);
-    setAnalysis(null);
-  };
-
-  const handleAIAnalyze = async () => {
-    if (!videoRef.current) return;
-    
-    setIsAnalyzing(true);
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        const base64 = canvas.toDataURL('image/jpeg', 0.8);
-        const result = await analyzeVideoFrame(
-          base64, 
-          "Descreva o que está acontecendo neste momento do vídeo de forma concisa e amigável em Português."
-        );
-        setAnalysis({
-          summary: result,
-          timestamp: videoRef.current.currentTime
-        });
-      }
-    } finally {
-      setIsAnalyzing(false);
-    }
   };
 
   return (
@@ -63,7 +32,7 @@ const App: React.FC = () => {
           <div className="bg-blue-600 p-2 rounded-lg">
             <Zap className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight">NovaPlayer <span className="text-blue-500 font-light">AI</span></h1>
+          <h1 className="text-xl font-bold tracking-tight">NovaPlayer</h1>
         </div>
         
         {video && (
@@ -94,32 +63,10 @@ const App: React.FC = () => {
               </div>
 
               <div className="glass p-6 rounded-2xl space-y-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold truncate max-w-md">{video.name}</h2>
-                    <p className="text-sm text-slate-400">{video.size} • {video.type}</p>
-                  </div>
-                  <button 
-                    onClick={handleAIAnalyze}
-                    disabled={isAnalyzing}
-                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-95"
-                  >
-                    <Layers className={`w-4 h-4 ${isAnalyzing ? 'animate-spin' : ''}`} />
-                    {isAnalyzing ? 'Analisando...' : 'Analisar Frame (IA)'}
-                  </button>
+                <div>
+                  <h2 className="text-lg font-semibold truncate max-w-md">{video.name}</h2>
+                  <p className="text-sm text-slate-400">{video.size} • {video.type}</p>
                 </div>
-
-                {analysis && (
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <div className="flex items-center gap-2 mb-2 text-blue-400">
-                      <Info className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-wider">Insight da IA no tempo {Math.floor(analysis.timestamp)}s</span>
-                    </div>
-                    <p className="text-slate-300 leading-relaxed italic">
-                      "{analysis.summary}"
-                    </p>
-                  </div>
-                )}
               </div>
             </>
           )}
@@ -169,7 +116,7 @@ const App: React.FC = () => {
 
       {/* Mobile Sticky Action */}
       <footer className="lg:hidden p-4 glass border-t border-white/5 sticky bottom-0 z-50 flex justify-center">
-         <p className="text-xs text-slate-500">NovaPlayer AI v1.0 • Desenvolvido com Gemini</p>
+         <p className="text-xs text-slate-500">NovaPlayer v1.0</p>
       </footer>
     </div>
   );
