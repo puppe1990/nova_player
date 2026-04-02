@@ -99,6 +99,10 @@ const App: React.FC = () => {
                 <span className="text-slate-400 group-hover:text-slate-200 transition-colors">Fullscreen</span>
                 <kbd className="px-2 py-1 bg-white/10 border border-white/10 rounded font-mono">F</kbd>
               </li>
+              <li className="flex justify-between items-center group">
+                <span className="text-slate-400 group-hover:text-slate-200 transition-colors">Loop últimos 5s</span>
+                <kbd className="px-2 py-1 bg-white/10 border border-white/10 rounded font-mono">L</kbd>
+              </li>
             </ul>
           </section>
 

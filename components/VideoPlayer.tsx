@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Maximize, Settings, FastForward, Rewind } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, FastForward, Rewind, Repeat } from 'lucide-react';
 
 interface Props {
   src: string;
@@ -23,6 +23,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showControls, setShowControls] = useState(true);
+  const [isLoopingLastFive, setIsLoopingLastFive] = useState(false);
   
   // Preview states
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -30,6 +31,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
   const [previewPos, setPreviewPos] = useState(0);
 
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loopWindowRef = useRef<{ start: number; end: number } | null>(null);
 
   const togglePlay = () => {
     if (innerRef.current?.paused) {
@@ -43,6 +45,26 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
     if (innerRef.current) {
       innerRef.current.currentTime += amount;
     }
+  };
+
+  const toggleLastFiveLoop = () => {
+    if (!innerRef.current) return;
+
+    if (isLoopingLastFive) {
+      loopWindowRef.current = null;
+      setIsLoopingLastFive(false);
+      return;
+    }
+
+    const loopEnd = innerRef.current.currentTime;
+    const loopStart = Math.max(0, loopEnd - 5);
+
+    loopWindowRef.current = { start: loopStart, end: loopEnd };
+    innerRef.current.currentTime = loopStart;
+    if (innerRef.current.paused) {
+      innerRef.current.play();
+    }
+    setIsLoopingLastFive(true);
   };
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,6 +159,11 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
           e.preventDefault();
           toggleFullscreen();
           break;
+        case 'l':
+        case 'L':
+          e.preventDefault();
+          toggleLastFiveLoop();
+          break;
         case 'm':
         case 'M':
           e.preventDefault();
@@ -147,7 +174,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [playbackRate, isMuted]);
+  }, [playbackRate, isMuted, isLoopingLastFive]);
 
   const handleMouseMove = () => {
     setShowControls(true);
@@ -182,9 +209,24 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
         onPause={() => setIsPlaying(false)}
         onTimeUpdate={() => {
           if (innerRef.current) {
+            const loopWindow = loopWindowRef.current;
+
+            if (loopWindow && innerRef.current.currentTime >= loopWindow.end) {
+              innerRef.current.currentTime = loopWindow.start;
+            }
+
             setCurrentTime(innerRef.current.currentTime);
             setProgress((innerRef.current.currentTime / innerRef.current.duration) * 100);
           }
+        }}
+        onEnded={() => {
+          if (loopWindowRef.current && innerRef.current) {
+            innerRef.current.currentTime = loopWindowRef.current.start;
+            innerRef.current.play();
+            return;
+          }
+
+          setIsPlaying(false);
         }}
         onLoadedMetadata={() => setDuration(innerRef.current?.duration || 0)}
         onClick={togglePlay}
@@ -276,6 +318,17 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
             </button>
             <button onClick={() => skip(5)} className="hover:text-blue-400 transition-colors">
               <FastForward className="w-5 h-5" />
+            </button>
+            <button
+              onClick={toggleLastFiveLoop}
+              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                isLoopingLastFive
+                  ? 'border-blue-400/70 bg-blue-500/20 text-blue-200'
+                  : 'border-white/10 bg-white/5 text-slate-300 hover:text-blue-400'
+              }`}
+            >
+              <Repeat className="w-4 h-4" />
+              Loop 5s
             </button>
             
             <div className="flex items-center gap-2 ml-2">
