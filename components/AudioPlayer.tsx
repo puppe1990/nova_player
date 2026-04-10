@@ -1,18 +1,13 @@
-
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, FastForward, Rewind, Repeat } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, FastForward, Rewind, Repeat } from 'lucide-react';
 
 interface Props {
   src: string;
 }
 
-const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
-  const innerRef = useRef<HTMLVideoElement>(null);
-  const ghostRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const timelineRef = useRef<HTMLDivElement>(null);
+const AudioPlayer = forwardRef<HTMLAudioElement, Props>(({ src }, ref) => {
+  const innerRef = useRef<HTMLAudioElement>(null);
   
-  // Expose innerRef to parent
   useImperativeHandle(ref, () => innerRef.current!);
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -22,15 +17,8 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
-  const [showControls, setShowControls] = useState(true);
   const [isLoopingLastFive, setIsLoopingLastFive] = useState(false);
-  
-  // Preview states
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const [previewTime, setPreviewTime] = useState(0);
-  const [previewPos, setPreviewPos] = useState(0);
 
-  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loopWindowRef = useRef<{ start: number; end: number } | null>(null);
 
   const togglePlay = () => {
@@ -78,37 +66,12 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
     }
   };
 
-  const handleTimelineMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!timelineRef.current || !duration) return;
-    
-    const rect = timelineRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = Math.max(0, Math.min(1, x / rect.width));
-    const time = percentage * duration;
-    
-    setPreviewTime(time);
-    setPreviewPos(x);
-    setPreviewVisible(true);
-    
-    if (ghostRef.current) {
-      ghostRef.current.currentTime = time;
-    }
-  };
-
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     setVolume(value);
     if (innerRef.current) {
       innerRef.current.volume = value;
       setIsMuted(value === 0);
-    }
-  };
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen();
-    } else {
-      document.exitFullscreen();
     }
   };
 
@@ -158,11 +121,6 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
           e.preventDefault();
           resetPlaybackRate();
           break;
-        case 'f':
-        case 'F':
-          e.preventDefault();
-          toggleFullscreen();
-          break;
         case 'l':
         case 'L':
           e.preventDefault();
@@ -181,14 +139,6 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [playbackRate, isMuted, isLoopingLastFive]);
 
-  const handleMouseMove = () => {
-    setShowControls(true);
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    controlsTimeoutRef.current = setTimeout(() => {
-      if (isPlaying) setShowControls(false);
-    }, 3000);
-  };
-
   const formatTime = (time: number) => {
     const mins = Math.floor(time / 60);
     const secs = Math.floor(time % 60);
@@ -196,20 +146,10 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
   };
 
   return (
-    <div 
-      ref={containerRef}
-      className="group relative w-full h-full bg-black flex items-center justify-center select-none overflow-hidden"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => {
-        if (isPlaying) setShowControls(false);
-        setPreviewVisible(false);
-      }}
-    >
-      {/* Main Video */}
-      <video
+    <div className="w-full bg-slate-900 rounded-2xl p-6 glass border border-white/10">
+      <audio
         ref={innerRef}
         src={src}
-        className="max-w-full max-h-full"
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         onTimeUpdate={() => {
@@ -234,66 +174,11 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
           setIsPlaying(false);
         }}
         onLoadedMetadata={() => setDuration(innerRef.current?.duration || 0)}
-        onClick={togglePlay}
       />
 
-      {/* Ghost Video for Preview Generation */}
-      <video
-        ref={ghostRef}
-        src={src}
-        muted
-        preload="auto"
-        className="hidden"
-      />
-
-      {/* Large Center Play Indicator */}
-      {!isPlaying && (
-        <div 
-            onClick={togglePlay}
-            className="absolute inset-0 flex items-center justify-center bg-black/20 cursor-pointer transition-opacity"
-        >
-          <div className="p-6 bg-white/10 backdrop-blur-md rounded-full border border-white/20 scale-110 hover:scale-125 transition-transform">
-            <Play className="w-12 h-12 text-white fill-current" />
-          </div>
-        </div>
-      )}
-
-      {/* Custom Controls Bar */}
-      <div 
-        className={`absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-all duration-300 transform ${
-          showControls ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'
-        }`}
-      >
-        {/* Timeline Area with Preview */}
-        <div 
-          ref={timelineRef}
-          className="group/progress relative mb-6 cursor-pointer"
-          onMouseMove={handleTimelineMouseMove}
-          onMouseLeave={() => setPreviewVisible(false)}
-        >
-          {/* Hover Preview Box */}
-          {previewVisible && (
-            <div 
-              className="absolute bottom-full mb-4 pointer-events-none transform -translate-x-1/2 flex flex-col items-center animate-in fade-in zoom-in-95 duration-200"
-              style={{ left: `${previewPos}px` }}
-            >
-              <div className="w-48 aspect-video bg-black rounded-lg border-2 border-white/20 shadow-2xl overflow-hidden glass relative">
-                <video 
-                  src={src}
-                  ref={(el) => {
-                    if (el) el.currentTime = previewTime;
-                  }}
-                  muted
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/80 rounded text-[10px] font-bold text-white tabular-nums">
-                  {formatTime(previewTime)}
-                </div>
-              </div>
-              <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white/20 mt-[-1px]"></div>
-            </div>
-          )}
-
+      <div className="space-y-4">
+        {/* Progress Bar */}
+        <div>
           <input
             type="range"
             min="0"
@@ -301,18 +186,11 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
             step="0.1"
             value={progress || 0}
             onChange={handleProgressChange}
-            className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer group-hover/progress:h-2.5 transition-all accent-blue-500 relative z-10"
+            className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-blue-500"
           />
-          
-          {/* Hover highlight bar */}
-          {previewVisible && (
-             <div 
-               className="absolute top-0 left-0 h-full bg-white/20 pointer-events-none rounded-lg"
-               style={{ width: `${previewPos}px` }}
-             />
-          )}
         </div>
 
+        {/* Controls */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <button onClick={togglePlay} className="hover:text-blue-400 transition-colors">
@@ -335,7 +213,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
               <Repeat className="w-4 h-4" />
               Loop 5s
             </button>
-            
+
             <div className="flex items-center gap-2 ml-2">
               <button onClick={() => { const m = !isMuted; setIsMuted(m); if (innerRef.current) innerRef.current.muted = m; }} className="hover:text-blue-400 transition-colors">
                 {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
@@ -361,8 +239,8 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full border border-white/5">
               <span className="text-xs font-bold text-slate-400">SPEED</span>
-              <select 
-                value={playbackRate} 
+              <select
+                value={playbackRate}
                 onChange={(e) => adjustPlaybackRate(parseFloat(e.target.value) - playbackRate)}
                 className="bg-transparent text-sm font-bold focus:outline-none cursor-pointer"
               >
@@ -371,10 +249,6 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
                 ))}
               </select>
             </div>
-
-            <button onClick={toggleFullscreen} className="hover:text-blue-400 transition-colors">
-              <Maximize className="w-6 h-6" />
-            </button>
           </div>
         </div>
       </div>
@@ -382,4 +256,4 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
   );
 });
 
-export default VideoPlayer;
+export default AudioPlayer;
