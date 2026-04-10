@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Play, Pause, Volume2, VolumeX, FastForward, Rewind, Repeat } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, FastForward, Rewind, Repeat, Music } from 'lucide-react';
 
 interface Props {
   src: string;
+  name?: string;
+  size?: string;
 }
 
-const AudioPlayer = forwardRef<HTMLAudioElement, Props>(({ src }, ref) => {
+const AudioPlayer = forwardRef<HTMLAudioElement, Props>(({ src, name, size }, ref) => {
   const innerRef = useRef<HTMLAudioElement>(null);
   
   useImperativeHandle(ref, () => innerRef.current!);
@@ -146,7 +148,7 @@ const AudioPlayer = forwardRef<HTMLAudioElement, Props>(({ src }, ref) => {
   };
 
   return (
-    <div className="w-full bg-slate-900 rounded-2xl p-6 glass border border-white/10">
+    <div className="w-full max-w-lg mx-auto bg-slate-900 rounded-2xl p-8 glass border border-white/10 space-y-6">
       <audio
         ref={innerRef}
         src={src}
@@ -155,11 +157,9 @@ const AudioPlayer = forwardRef<HTMLAudioElement, Props>(({ src }, ref) => {
         onTimeUpdate={() => {
           if (innerRef.current) {
             const loopWindow = loopWindowRef.current;
-
             if (loopWindow && innerRef.current.currentTime >= loopWindow.end) {
               innerRef.current.currentTime = loopWindow.start;
             }
-
             setCurrentTime(innerRef.current.currentTime);
             setProgress((innerRef.current.currentTime / innerRef.current.duration) * 100);
           }
@@ -170,86 +170,105 @@ const AudioPlayer = forwardRef<HTMLAudioElement, Props>(({ src }, ref) => {
             innerRef.current.play();
             return;
           }
-
           setIsPlaying(false);
         }}
         onLoadedMetadata={() => setDuration(innerRef.current?.duration || 0)}
       />
 
-      <div className="space-y-4">
-        {/* Progress Bar */}
-        <div>
+      {/* Ícone visual + info */}
+      <div className="flex flex-col items-center gap-3">
+        <div className={`p-6 rounded-full bg-blue-600/15 border border-blue-500/20 transition-all duration-500 ${isPlaying ? 'ring-4 ring-blue-500/20 shadow-lg shadow-blue-600/20' : ''}`}>
+          <Music className={`w-10 h-10 text-blue-400 transition-all duration-300 ${isPlaying ? 'opacity-100' : 'opacity-60'}`} />
+        </div>
+        {name && (
+          <div className="text-center">
+            <p className="text-sm font-semibold text-slate-200 truncate max-w-xs">{name}</p>
+            {size && <p className="text-xs text-slate-500 mt-0.5">{size}</p>}
+          </div>
+        )}
+      </div>
+
+      {/* Barra de progresso + tempo */}
+      <div className="space-y-1.5">
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="0.1"
+          value={progress || 0}
+          onChange={handleProgressChange}
+          className="w-full h-1.5 bg-white/15 rounded-full appearance-none cursor-pointer accent-blue-500"
+        />
+        <div className="flex justify-between text-xs text-slate-500 tabular-nums px-0.5">
+          <span>{formatTime(currentTime)}</span>
+          <span>{formatTime(duration)}</span>
+        </div>
+      </div>
+
+      {/* Controles principais */}
+      <div className="flex items-center justify-center gap-6">
+        <button onClick={() => skip(-5)} className="text-slate-400 hover:text-white transition-colors">
+          <Rewind className="w-6 h-6" />
+        </button>
+        <button
+          onClick={togglePlay}
+          className="w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 flex items-center justify-center transition-all shadow-lg shadow-blue-600/30 active:scale-95"
+        >
+          {isPlaying
+            ? <Pause className="w-6 h-6 fill-current" />
+            : <Play className="w-6 h-6 fill-current ml-0.5" />}
+        </button>
+        <button onClick={() => skip(5)} className="text-slate-400 hover:text-white transition-colors">
+          <FastForward className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Controles secundários */}
+      <div className="flex items-center justify-between gap-2">
+        {/* Volume */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { const m = !isMuted; setIsMuted(m); if (innerRef.current) innerRef.current.muted = m; }}
+            className="text-slate-400 hover:text-white transition-colors"
+          >
+            {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          </button>
           <input
             type="range"
             min="0"
-            max="100"
+            max="1"
             step="0.1"
-            value={progress || 0}
-            onChange={handleProgressChange}
-            className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            value={isMuted ? 0 : volume}
+            onChange={handleVolumeChange}
+            className="w-20 h-1 bg-white/15 rounded-full appearance-none cursor-pointer accent-white"
           />
         </div>
 
-        {/* Controls */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button onClick={togglePlay} className="hover:text-blue-400 transition-colors">
-              {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current" />}
-            </button>
-            <button onClick={() => skip(-5)} className="hover:text-blue-400 transition-colors">
-              <Rewind className="w-5 h-5" />
-            </button>
-            <button onClick={() => skip(5)} className="hover:text-blue-400 transition-colors">
-              <FastForward className="w-5 h-5" />
-            </button>
-            <button
-              onClick={toggleLastFiveLoop}
-              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
-                isLoopingLastFive
-                  ? 'border-blue-400/70 bg-blue-500/20 text-blue-200'
-                  : 'border-white/10 bg-white/5 text-slate-300 hover:text-blue-400'
-              }`}
-            >
-              <Repeat className="w-4 h-4" />
-              Loop 5s
-            </button>
+        {/* Loop */}
+        <button
+          onClick={toggleLastFiveLoop}
+          className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+            isLoopingLastFive
+              ? 'border-blue-400/70 bg-blue-500/20 text-blue-200'
+              : 'border-white/10 bg-white/5 text-slate-400 hover:text-blue-400'
+          }`}
+        >
+          <Repeat className="w-3.5 h-3.5" />
+          Loop 5s
+        </button>
 
-            <div className="flex items-center gap-2 ml-2">
-              <button onClick={() => { const m = !isMuted; setIsMuted(m); if (innerRef.current) innerRef.current.muted = m; }} className="hover:text-blue-400 transition-colors">
-                {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-              </button>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={isMuted ? 0 : volume}
-                onChange={handleVolumeChange}
-                className="w-20 h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-white"
-              />
-            </div>
-
-            <div className="text-sm font-medium text-slate-300 ml-2">
-              <span className="tabular-nums">{formatTime(currentTime)}</span>
-              <span className="mx-1 opacity-50">/</span>
-              <span className="tabular-nums">{formatTime(duration)}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full border border-white/5">
-              <span className="text-xs font-bold text-slate-400">SPEED</span>
-              <select
-                value={playbackRate}
-                onChange={(e) => adjustPlaybackRate(parseFloat(e.target.value) - playbackRate)}
-                className="bg-transparent text-sm font-bold focus:outline-none cursor-pointer"
-              >
-                {[0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4].map(r => (
-                  <option key={r} value={r} className="bg-slate-900 text-white">{r}x</option>
-                ))}
-              </select>
-            </div>
-          </div>
+        {/* Speed */}
+        <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full border border-white/5">
+          <span className="text-xs font-bold text-slate-400">SPEED</span>
+          <select
+            value={playbackRate}
+            onChange={(e) => adjustPlaybackRate(parseFloat(e.target.value) - playbackRate)}
+            className="bg-transparent text-sm font-bold focus:outline-none cursor-pointer"
+          >
+            {[0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4].map(r => (
+              <option key={r} value={r} className="bg-slate-900 text-white">{r}x</option>
+            ))}
+          </select>
         </div>
       </div>
     </div>

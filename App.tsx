@@ -1,27 +1,46 @@
 
 import React, { useState, useRef } from 'react';
-import { Play, Zap, X } from 'lucide-react';
+import { Play, Zap, X, Music } from 'lucide-react';
 import VideoPlayer from './components/VideoPlayer';
+import AudioPlayer from './components/AudioPlayer';
 import FileUpload from './components/FileUpload';
-import { VideoMetadata } from './types';
+import { VideoMetadata, AudioMetadata } from './types';
 
 const App: React.FC = () => {
   const [video, setVideo] = useState<VideoMetadata | null>(null);
+  const [audio, setAudio] = useState<AudioMetadata | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const handleFileSelect = (file: File) => {
     const url = URL.createObjectURL(file);
-    setVideo({
-      name: file.name,
-      size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
-      type: file.type,
-      url: url
-    });
+    if (file.type.startsWith('video/')) {
+      setVideo({
+        name: file.name,
+        size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+        type: file.type,
+        url: url
+      });
+      setAudio(null);
+    } else if (file.type.startsWith('audio/')) {
+      setAudio({
+        name: file.name,
+        size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+        type: file.type,
+        url: url
+      });
+      setVideo(null);
+    }
   };
 
   const clearVideo = () => {
     if (video?.url) URL.revokeObjectURL(video.url);
     setVideo(null);
+  };
+
+  const clearAudio = () => {
+    if (audio?.url) URL.revokeObjectURL(audio.url);
+    setAudio(null);
   };
 
   return (
@@ -35,13 +54,16 @@ const App: React.FC = () => {
           <h1 className="text-xl font-bold tracking-tight">NovaPlayer</h1>
         </div>
         
-        {video && (
-          <button 
-            onClick={clearVideo}
+        {(video || audio) && (
+          <button
+            onClick={() => {
+              clearVideo();
+              clearAudio();
+            }}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-sm"
           >
             <X className="w-4 h-4" />
-            Remover Vídeo
+            Remover {video ? 'Vídeo' : 'Áudio'}
           </button>
         )}
       </header>
@@ -49,26 +71,41 @@ const App: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col lg:flex-row gap-6 p-6 max-w-[1600px] mx-auto w-full">
         <div className="flex-1 flex flex-col gap-6">
-          {!video ? (
+          {!video && !audio ? (
             <div className="flex-1 flex items-center justify-center min-h-[500px]">
               <FileUpload onFileSelect={handleFileSelect} />
             </div>
           ) : (
-            <>
-              <div className="relative rounded-2xl overflow-hidden bg-black aspect-video shadow-2xl ring-1 ring-white/10">
-                <VideoPlayer 
-                  src={video.url} 
-                  ref={videoRef}
-                />
-              </div>
+            <div className="flex-1 flex flex-col">
+              {video && (
+                <>
+                  <div className="relative rounded-2xl overflow-hidden bg-black aspect-video shadow-2xl ring-1 ring-white/10">
+                    <VideoPlayer
+                      src={video.url}
+                      ref={videoRef}
+                    />
+                  </div>
 
-              <div className="glass p-6 rounded-2xl space-y-4">
-                <div>
-                  <h2 className="text-lg font-semibold truncate max-w-md">{video.name}</h2>
-                  <p className="text-sm text-slate-400">{video.size} • {video.type}</p>
+                  <div className="glass p-6 rounded-2xl space-y-4">
+                    <div>
+                      <h2 className="text-lg font-semibold truncate max-w-md">{video.name}</h2>
+                      <p className="text-sm text-slate-400">{video.size} • {video.type}</p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {audio && (
+                <div className="flex-1 flex items-center justify-center">
+                  <AudioPlayer
+                    src={audio.url}
+                    name={audio.name}
+                    size={`${audio.size} • ${audio.type}`}
+                    ref={audioRef}
+                  />
                 </div>
-              </div>
-            </>
+              )}
+            </div>
           )}
         </div>
 
