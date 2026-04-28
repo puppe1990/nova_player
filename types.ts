@@ -1,4 +1,3 @@
-
 export interface VideoMetadata {
   name: string;
   size: string;

@@ -8,10 +8,14 @@ export default defineConfig({
     port: 3000,
     host: '0.0.0.0',
   },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './test/setup.ts',
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),
-    }
-  }
+    },
+  },
 });
