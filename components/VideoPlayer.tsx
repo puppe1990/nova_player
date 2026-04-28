@@ -154,10 +154,23 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
     await innerRef.current.requestPictureInPicture();
   };
 
+  const armFloatingMode = async () => {
+    setIsFloatingModeArmed(true);
+
+    try {
+      await enterPictureInPicture();
+    } catch {
+      setIsFloatingModeArmed(false);
+    }
+  };
+
   const toggleFloatingMode = async () => {
-    const nextValue = !isFloatingModeArmed;
-    setIsFloatingModeArmed(nextValue);
-    if (nextValue) return;
+    if (!isFloatingModeArmed) {
+      await armFloatingMode();
+      return;
+    }
+
+    setIsFloatingModeArmed(false);
     await exitPictureInPicture();
   };
 
@@ -218,18 +231,6 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [playbackRate, isMuted, isLoopingLastFive]);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden || !isFloatingModeArmed) return;
-      void enterPictureInPicture();
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isFloatingModeArmed]);
 
   const handleMouseMove = () => {
     setShowControls(true);
