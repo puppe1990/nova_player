@@ -115,4 +115,26 @@ describe('VideoPlayer floating mode', () => {
 
     expect(requestPictureInPicture).not.toHaveBeenCalled();
   });
+
+  it('restores the selected playback speed after pausing and resuming', () => {
+    render(<VideoPlayer src="movie.mp4" />);
+
+    const video = document.querySelector('video');
+    if (!video) {
+      throw new Error(
+        'Expected one video element for playback speed resume test',
+      );
+    }
+
+    const speedSelect = screen.getByRole('combobox');
+
+    fireEvent.change(speedSelect, { target: { value: '2' } });
+    expect(video.playbackRate).toBe(2);
+
+    fireEvent.pause(video);
+    video.playbackRate = 1;
+    fireEvent.play(video);
+
+    expect(video.playbackRate).toBe(2);
+  });
 });
