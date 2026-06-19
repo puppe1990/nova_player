@@ -127,19 +127,20 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
     }
   };
 
+  const applyPlaybackRate = (rate: number) => {
+    if (!innerRef.current) return;
+    innerRef.current.playbackRate = rate;
+  };
+
   const adjustPlaybackRate = (delta: number) => {
     const newRate = Math.max(0.25, Math.min(4, playbackRate + delta));
     setPlaybackRate(newRate);
-    if (innerRef.current) {
-      innerRef.current.playbackRate = newRate;
-    }
+    applyPlaybackRate(newRate);
   };
 
   const resetPlaybackRate = () => {
     setPlaybackRate(1);
-    if (innerRef.current) {
-      innerRef.current.playbackRate = 1;
-    }
+    applyPlaybackRate(1);
   };
 
   const exitPictureInPicture = async () => {
@@ -261,7 +262,10 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(({ src }, ref) => {
         ref={innerRef}
         src={src}
         className="max-w-full max-h-full"
-        onPlay={() => setIsPlaying(true)}
+        onPlay={() => {
+          applyPlaybackRate(playbackRate);
+          setIsPlaying(true);
+        }}
         onPause={() => setIsPlaying(false)}
         onTimeUpdate={() => {
           if (innerRef.current) {
