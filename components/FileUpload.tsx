@@ -2,11 +2,28 @@ import React, { useState } from 'react';
 import { Upload, Film, FileVideo, Headphones } from 'lucide-react';
 
 interface Props {
-  onFileSelect: (file: File) => void;
+  onFilesSelect: (files: File[]) => void;
+  remainingSlots: number;
 }
 
-const FileUpload: React.FC<Props> = ({ onFileSelect }) => {
+function isMediaFile(file: File): boolean {
+  return file.type.startsWith('video/') || file.type.startsWith('audio/');
+}
+
+const FileUpload: React.FC<Props> = ({ onFilesSelect, remainingSlots }) => {
   const [isDragging, setIsDragging] = useState(false);
+
+  const processFiles = (fileList: FileList) => {
+    if (remainingSlots <= 0) return;
+
+    const mediaFiles = Array.from(fileList)
+      .filter(isMediaFile)
+      .slice(0, remainingSlots);
+
+    if (mediaFiles.length > 0) {
+      onFilesSelect(mediaFiles);
+    }
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -20,19 +37,12 @@ const FileUpload: React.FC<Props> = ({ onFileSelect }) => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (
-      file &&
-      (file.type.startsWith('video/') || file.type.startsWith('audio/'))
-    ) {
-      onFileSelect(file);
-    }
+    processFiles(e.dataTransfer.files);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      onFileSelect(file);
+    if (e.target.files) {
+      processFiles(e.target.files);
     }
   };
 
@@ -60,17 +70,18 @@ const FileUpload: React.FC<Props> = ({ onFileSelect }) => {
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold">Arraste seu vídeo ou áudio aqui</h2>
         <p className="text-slate-400">
-          Ou clique para selecionar um arquivo local
+          Ou clique para selecionar arquivos locais
         </p>
       </div>
 
       <label className="cursor-pointer">
         <span className="px-8 py-3 bg-white text-slate-950 font-bold rounded-xl hover:bg-slate-200 transition-colors shadow-xl shadow-white/5 active:scale-95">
-          Selecionar Arquivo
+          Selecionar Arquivos
         </span>
         <input
           type="file"
           accept="video/*,audio/*"
+          multiple
           className="hidden"
           onChange={handleInputChange}
         />
