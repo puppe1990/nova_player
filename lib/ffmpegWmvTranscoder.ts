@@ -4,6 +4,12 @@ import type { WmvTranscoder } from './wmvTranscoder';
 
 const CORE_VERSION = '0.12.10';
 
+function fileExtension(fileName: string): string {
+  const dotIndex = fileName.lastIndexOf('.');
+  if (dotIndex === -1) return '.bin';
+  return fileName.slice(dotIndex).toLowerCase();
+}
+
 export class FfmpegWmvTranscoder implements WmvTranscoder {
   private ffmpeg = new FFmpeg();
   private loadPromise: Promise<void> | null = null;
@@ -36,7 +42,7 @@ export class FfmpegWmvTranscoder implements WmvTranscoder {
       this.ffmpeg.on('progress', ({ progress }) => onProgress(progress));
     }
 
-    const inputName = 'input.wmv';
+    const inputName = `input${fileExtension(file.name)}`;
     const outputName = 'output.mp4';
 
     await this.ffmpeg.writeFile(inputName, await fetchFile(file));
@@ -58,7 +64,7 @@ export class FfmpegWmvTranscoder implements WmvTranscoder {
 
     if (exitCode !== 0) {
       throw new Error(
-        `WMV transcode failed for "${file.name}" with exit code ${exitCode}`,
+        `Video transcode failed for "${file.name}" with exit code ${exitCode}`,
       );
     }
 

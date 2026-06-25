@@ -4,7 +4,12 @@ import MultiVideoGrid from './components/MultiVideoGrid';
 import AudioPlayer from './components/AudioPlayer';
 import FileUpload from './components/FileUpload';
 import { VideoMetadata, AudioMetadata, MAX_VIDEOS } from './types';
-import { isVideoFile, isAudioFile, isWmvFile } from './lib/mediaFile';
+import {
+  isVideoFile,
+  isAudioFile,
+  needsBrowserTranscode,
+  FILE_INPUT_ACCEPT,
+} from './lib/mediaFile';
 import { prepareVideoPlayback } from './lib/prepareVideoPlayback';
 import { createVideoMetadata } from './lib/createVideoMetadata';
 
@@ -32,7 +37,7 @@ const App: React.FC = () => {
 
     for (const file of allowed) {
       if (isVideoFile(file)) {
-        if (isWmvFile(file)) {
+        if (needsBrowserTranscode(file)) {
           setTranscodingFile(file.name);
           setTranscodeProgress(0);
         }
@@ -59,7 +64,7 @@ const App: React.FC = () => {
             `Não foi possível preparar "${file.name}" para reprodução: ${message}`,
           );
         } finally {
-          if (isWmvFile(file)) {
+          if (needsBrowserTranscode(file)) {
             setTranscodingFile(null);
             setTranscodeProgress(0);
           }
@@ -265,8 +270,8 @@ const App: React.FC = () => {
               Convertendo {transcodingFile} para MP4
             </p>
             <p className="text-sm text-slate-400">
-              WMV não é suportado nativamente pelo navegador. A conversão
-              acontece localmente no seu dispositivo.
+              WMV e MPG não são suportados nativamente pelo navegador. A
+              conversão acontece localmente no seu dispositivo.
             </p>
             <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
               <div
@@ -288,7 +293,7 @@ const App: React.FC = () => {
       <input
         ref={fileInputRef}
         type="file"
-        accept="video/*,audio/*,.wmv"
+        accept={FILE_INPUT_ACCEPT}
         multiple
         className="hidden"
         onChange={(e) => {

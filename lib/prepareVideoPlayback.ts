@@ -1,4 +1,4 @@
-import { isWmvFile } from './mediaFile';
+import { needsBrowserTranscode } from './mediaFile';
 import { loadWmvTranscoder } from './loadWmvTranscoder';
 import type { WmvTranscoder } from './wmvTranscoder';
 
@@ -12,7 +12,7 @@ export async function prepareVideoPlayback(
   onProgress?: (ratio: number) => void,
   transcoderLoader: () => Promise<WmvTranscoder> = loadWmvTranscoder,
 ): Promise<VideoPlaybackSource> {
-  if (!isWmvFile(file)) {
+  if (!needsBrowserTranscode(file)) {
     return {
       url: URL.createObjectURL(file),
       type: file.type || 'video/mp4',

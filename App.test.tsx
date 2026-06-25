@@ -10,10 +10,14 @@ import {
 import App from './App';
 import { prepareVideoPlayback } from './lib/prepareVideoPlayback';
 
+function isTranscodedVideo(name: string): boolean {
+  return /\.(wmv|mpg|mpeg)$/i.test(name);
+}
+
 vi.mock('./lib/prepareVideoPlayback', () => ({
   prepareVideoPlayback: vi.fn(async (file: File) => ({
     url: `blob:prepared-${file.name}`,
-    type: file.name.endsWith('.wmv') ? 'video/mp4' : file.type,
+    type: isTranscodedVideo(file.name) ? 'video/mp4' : file.type,
   })),
 }));
 
@@ -26,6 +30,10 @@ function createAudioFile(name: string): File {
 }
 
 function createWmvFile(name: string): File {
+  return new File(['video-content'], name, { type: '' });
+}
+
+function createMpgFile(name: string): File {
   return new File(['video-content'], name, { type: '' });
 }
 
@@ -52,7 +60,7 @@ async function waitForVideo(name: string) {
 beforeEach(() => {
   vi.mocked(prepareVideoPlayback).mockImplementation(async (file: File) => ({
     url: `blob:prepared-${file.name}`,
-    type: file.name.endsWith('.wmv') ? 'video/mp4' : file.type,
+    type: isTranscodedVideo(file.name) ? 'video/mp4' : file.type,
   }));
 });
 
@@ -76,6 +84,14 @@ describe('App multi-video', () => {
       await selectFiles([createWmvFile('clip.wmv')]);
 
       await waitForVideo('clip.wmv');
+      expect(prepareVideoPlayback).toHaveBeenCalled();
+    });
+
+    it('adds a MPG file after preparing playback source', async () => {
+      render(<App />);
+      await selectFiles([createMpgFile('clip.mpg')]);
+
+      await waitForVideo('clip.mpg');
       expect(prepareVideoPlayback).toHaveBeenCalled();
     });
 

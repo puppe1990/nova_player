@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { Upload, Film, FileVideo, Headphones } from 'lucide-react';
-import { isMediaFile, SUPPORTED_VIDEO_FORMATS_LABEL } from '../lib/mediaFile';
+import {
+  isMediaFile,
+  SUPPORTED_VIDEO_FORMATS_LABEL,
+  FILE_INPUT_ACCEPT,
+} from '../lib/mediaFile';
 
 interface Props {
   onFilesSelect: (files: File[]) => void;
@@ -77,7 +81,7 @@ const FileUpload: React.FC<Props> = ({ onFilesSelect, remainingSlots }) => {
         </span>
         <input
           type="file"
-          accept="video/*,audio/*,.wmv"
+          accept={FILE_INPUT_ACCEPT}
           multiple
           className="hidden"
           onChange={handleInputChange}

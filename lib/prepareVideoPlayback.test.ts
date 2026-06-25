@@ -45,6 +45,21 @@ describe('prepareVideoPlayback', () => {
     expect(result.url).toMatch(/^blob:/);
   });
 
+  it('transcodes MPG to MP4 before playback', async () => {
+    const file = createFile('clip.mpg', '');
+    const transcoder = createFakeTranscoder();
+
+    const result = await prepareVideoPlayback(
+      file,
+      undefined,
+      async () => transcoder,
+    );
+
+    expect(transcoder.transcodeToMp4).toHaveBeenCalledWith(file, undefined);
+    expect(result.type).toBe('video/mp4');
+    expect(result.url).toMatch(/^blob:/);
+  });
+
   it('forwards progress callback to the transcoder', async () => {
     const file = createFile('clip.wmv', 'video/x-ms-wmv');
     const transcoder = createFakeTranscoder();
