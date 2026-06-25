@@ -1,19 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { Play, Zap, X } from 'lucide-react';
+import { Loader2, Play, Zap, X } from 'lucide-react';
 import MultiVideoGrid from './components/MultiVideoGrid';
 import AudioPlayer from './components/AudioPlayer';
 import FileUpload from './components/FileUpload';
 import { VideoMetadata, AudioMetadata, MAX_VIDEOS } from './types';
-import { isVideoFile, isAudioFile } from './lib/mediaFile';
-
-function fileToVideoMetadata(file: File): VideoMetadata {
-  return {
-    name: file.name,
-    size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
-    type: file.type,
-    url: URL.createObjectURL(file),
-  };
-}
+import { isVideoFile, isAudioFile, isWmvFile } from './lib/mediaFile';
+import { prepareVideoPlayback } from './lib/prepareVideoPlayback';
+import { createVideoMetadata } from './lib/createVideoMetadata';
 
 function fileToAudioMetadata(file: File): AudioMetadata {
   return {
@@ -28,19 +21,49 @@ const App: React.FC = () => {
   const [videos, setVideos] = useState<VideoMetadata[]>([]);
   const [audio, setAudio] = useState<AudioMetadata | null>(null);
   const [activeVideoIndex, setActiveVideoIndex] = useState<number | null>(null);
+  const [transcodingFile, setTranscodingFile] = useState<string | null>(null);
+  const [transcodeProgress, setTranscodeProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const handleFilesSelect = (files: File[]) => {
+  const handleFilesSelect = async (files: File[]) => {
     const remainingSlots = MAX_VIDEOS - videos.length;
     const allowed = files.slice(0, remainingSlots);
 
     for (const file of allowed) {
       if (isVideoFile(file)) {
-        setVideos((prev) => {
-          if (prev.length >= MAX_VIDEOS) return prev;
-          return [...prev, fileToVideoMetadata(file)];
-        });
+        if (isWmvFile(file)) {
+          setTranscodingFile(file.name);
+          setTranscodeProgress(0);
+        }
+
+        try {
+          const playback = await prepareVideoPlayback(file, (ratio) =>
+            setTranscodeProgress(Math.round(ratio * 100)),
+          );
+
+          setVideos((prev) => {
+            if (prev.length >= MAX_VIDEOS) {
+              URL.revokeObjectURL(playback.url);
+              return prev;
+            }
+            return [
+              ...prev,
+              createVideoMetadata(file, playback.url, playback.type),
+            ];
+          });
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : 'Erro desconhecido';
+          window.alert(
+            `Não foi possível preparar "${file.name}" para reprodução: ${message}`,
+          );
+        } finally {
+          if (isWmvFile(file)) {
+            setTranscodingFile(null);
+            setTranscodeProgress(0);
+          }
+        }
       } else if (isAudioFile(file)) {
         if (audio?.url) URL.revokeObjectURL(audio.url);
         setAudio(fileToAudioMetadata(file));
@@ -230,6 +253,33 @@ const App: React.FC = () => {
           </section>
         </div>
       </main>
+
+      {transcodingFile && (
+        <div
+          role="status"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+        >
+          <div className="glass rounded-2xl p-8 max-w-md w-full mx-4 text-center space-y-4">
+            <Loader2 className="w-10 h-10 text-blue-400 animate-spin mx-auto" />
+            <p className="text-lg font-semibold">
+              Convertendo {transcodingFile} para MP4
+            </p>
+            <p className="text-sm text-slate-400">
+              WMV não é suportado nativamente pelo navegador. A conversão
+              acontece localmente no seu dispositivo.
+            </p>
+            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 transition-all duration-300"
+                style={{ width: `${transcodeProgress}%` }}
+              />
+            </div>
+            <p className="text-xs text-slate-500 tabular-nums">
+              {transcodeProgress}%
+            </p>
+          </div>
+        </div>
+      )}
 
       <footer className="lg:hidden p-4 glass border-t border-white/5 sticky bottom-0 z-50 flex justify-center">
         <p className="text-xs text-slate-500">NovaPlayer v1.0</p>

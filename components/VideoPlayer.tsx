@@ -52,12 +52,19 @@ const VideoPlayer = forwardRef<HTMLVideoElement, Props>(
     );
     const loopWindowRef = useRef<{ start: number; end: number } | null>(null);
 
-    const togglePlay = () => {
-      if (innerRef.current?.paused) {
-        innerRef.current.play();
-      } else {
-        innerRef.current?.pause();
+    const togglePlay = async () => {
+      if (!innerRef.current) return;
+
+      if (innerRef.current.paused) {
+        try {
+          await innerRef.current.play();
+        } catch {
+          setIsPlaying(false);
+        }
+        return;
       }
+
+      innerRef.current.pause();
     };
 
     const skip = (amount: number) => {

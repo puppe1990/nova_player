@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   isVideoFile,
   isMediaFile,
+  isWmvFile,
   SUPPORTED_VIDEO_FORMATS_LABEL,
 } from './mediaFile';
 
@@ -33,6 +34,23 @@ describe('isVideoFile', () => {
   it('rejects non-video files without WMV extension', () => {
     const file = createFile('readme.txt', 'text/plain');
     expect(isVideoFile(file)).toBe(false);
+  });
+});
+
+describe('isWmvFile', () => {
+  it('detects WMV by extension when MIME is empty', () => {
+    const file = createFile('clip.wmv', '');
+    expect(isWmvFile(file)).toBe(true);
+  });
+
+  it('detects WMV by video/x-ms-wmv MIME type', () => {
+    const file = createFile('clip.wmv', 'video/x-ms-wmv');
+    expect(isWmvFile(file)).toBe(true);
+  });
+
+  it('does not treat MP4 as WMV', () => {
+    const file = createFile('movie.mp4', 'video/mp4');
+    expect(isWmvFile(file)).toBe(false);
   });
 });
 

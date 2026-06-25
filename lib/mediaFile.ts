@@ -6,10 +6,14 @@ function hasWmvExtension(fileName: string): boolean {
   return fileName.toLowerCase().endsWith('.wmv');
 }
 
+export function isWmvFile(file: File): boolean {
+  if (WMV_MIME_TYPES.has(file.type)) return true;
+  return hasWmvExtension(file.name);
+}
+
 export function isVideoFile(file: File): boolean {
   if (file.type.startsWith('video/')) return true;
-  if (WMV_MIME_TYPES.has(file.type)) return true;
-  if (file.type === '' && hasWmvExtension(file.name)) return true;
+  if (isWmvFile(file)) return true;
   return false;
 }
 
