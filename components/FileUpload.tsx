@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
 import { Upload, Film, FileVideo, Headphones } from 'lucide-react';
+import { isMediaFile, SUPPORTED_VIDEO_FORMATS_LABEL } from '../lib/mediaFile';
 
 interface Props {
   onFilesSelect: (files: File[]) => void;
   remainingSlots: number;
-}
-
-function isMediaFile(file: File): boolean {
-  return file.type.startsWith('video/') || file.type.startsWith('audio/');
 }
 
 const FileUpload: React.FC<Props> = ({ onFilesSelect, remainingSlots }) => {
@@ -80,7 +77,7 @@ const FileUpload: React.FC<Props> = ({ onFilesSelect, remainingSlots }) => {
         </span>
         <input
           type="file"
-          accept="video/*,audio/*"
+          accept="video/*,audio/*,.wmv"
           multiple
           className="hidden"
           onChange={handleInputChange}
@@ -90,7 +87,7 @@ const FileUpload: React.FC<Props> = ({ onFilesSelect, remainingSlots }) => {
       <div className="flex gap-4 mt-4">
         <div className="flex items-center gap-2 text-xs text-slate-500 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
           <Film className="w-3 h-3" />
-          Vídeo: MP4, MKV, WebM
+          Vídeo: {SUPPORTED_VIDEO_FORMATS_LABEL}
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-500 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
           <Headphones className="w-3 h-3" />

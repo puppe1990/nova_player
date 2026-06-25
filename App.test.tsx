@@ -10,6 +10,10 @@ function createAudioFile(name: string): File {
   return new File(['audio-content'], name, { type: 'audio/mpeg' });
 }
 
+function createWmvFile(name: string): File {
+  return new File(['video-content'], name, { type: '' });
+}
+
 function selectFiles(files: File[]) {
   const inputs = document.querySelectorAll('input[type="file"]');
   const input = inputs[inputs.length - 1];
@@ -39,6 +43,13 @@ describe('App multi-video', () => {
       selectFiles([createVideoFile('movie.mp4')]);
 
       expect(screen.getByText('movie.mp4')).not.toBeNull();
+    });
+
+    it('adds a WMV file with empty MIME type', () => {
+      render(<App />);
+      selectFiles([createWmvFile('clip.wmv')]);
+
+      expect(screen.getByText('clip.wmv')).not.toBeNull();
     });
 
     it('adds multiple videos up to 4', () => {

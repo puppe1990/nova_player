@@ -14,6 +14,10 @@ function createTextFile(name: string): File {
   return new File(['text-content'], name, { type: 'text/plain' });
 }
 
+function createWmvFile(name: string, type = ''): File {
+  return new File(['video-content'], name, { type });
+}
+
 afterEach(cleanup);
 
 describe('FileUpload', () => {
@@ -24,6 +28,17 @@ describe('FileUpload', () => {
 
       const input = document.querySelector('input[type="file"]')!;
       const file = createVideoFile('movie.mp4');
+      fireEvent.change(input, { target: { files: [file] } });
+
+      expect(onFilesSelect).toHaveBeenCalledWith([file]);
+    });
+
+    it('calls onFilesSelect with WMV file when MIME type is empty', () => {
+      const onFilesSelect = vi.fn();
+      render(<FileUpload onFilesSelect={onFilesSelect} remainingSlots={4} />);
+
+      const input = document.querySelector('input[type="file"]')!;
+      const file = createWmvFile('clip.wmv');
       fireEvent.change(input, { target: { files: [file] } });
 
       expect(onFilesSelect).toHaveBeenCalledWith([file]);
@@ -140,6 +155,11 @@ describe('FileUpload', () => {
       });
 
       expect(onFilesSelect).not.toHaveBeenCalled();
+    });
+
+    it('lists WMV among supported video formats', () => {
+      render(<FileUpload onFilesSelect={vi.fn()} remainingSlots={4} />);
+      expect(screen.getByText(/WMV/i)).not.toBeNull();
     });
 
     it('does not call onFilesSelect when remainingSlots is 0', () => {

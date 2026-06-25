@@ -4,6 +4,7 @@ import MultiVideoGrid from './components/MultiVideoGrid';
 import AudioPlayer from './components/AudioPlayer';
 import FileUpload from './components/FileUpload';
 import { VideoMetadata, AudioMetadata, MAX_VIDEOS } from './types';
+import { isVideoFile, isAudioFile } from './lib/mediaFile';
 
 function fileToVideoMetadata(file: File): VideoMetadata {
   return {
@@ -35,12 +36,12 @@ const App: React.FC = () => {
     const allowed = files.slice(0, remainingSlots);
 
     for (const file of allowed) {
-      if (file.type.startsWith('video/')) {
+      if (isVideoFile(file)) {
         setVideos((prev) => {
           if (prev.length >= MAX_VIDEOS) return prev;
           return [...prev, fileToVideoMetadata(file)];
         });
-      } else if (file.type.startsWith('audio/')) {
+      } else if (isAudioFile(file)) {
         if (audio?.url) URL.revokeObjectURL(audio.url);
         setAudio(fileToAudioMetadata(file));
       }
@@ -237,7 +238,7 @@ const App: React.FC = () => {
       <input
         ref={fileInputRef}
         type="file"
-        accept="video/*,audio/*"
+        accept="video/*,audio/*,.wmv"
         multiple
         className="hidden"
         onChange={(e) => {
