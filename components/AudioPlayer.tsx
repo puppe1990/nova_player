@@ -13,6 +13,7 @@ import {
   FastForward,
   Rewind,
   Repeat,
+  Repeat1,
   Music,
 } from 'lucide-react';
 
@@ -36,6 +37,7 @@ const AudioPlayer = forwardRef<HTMLAudioElement, Props>(
     const [isMuted, setIsMuted] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
     const [isLoopingLastFive, setIsLoopingLastFive] = useState(false);
+    const [isRepeating, setIsRepeating] = useState(false);
 
     const loopWindowRef = useRef<{ start: number; end: number } | null>(null);
 
@@ -71,6 +73,14 @@ const AudioPlayer = forwardRef<HTMLAudioElement, Props>(
         innerRef.current.play();
       }
       setIsLoopingLastFive(true);
+    };
+
+    const toggleRepeat = () => {
+      const next = !isRepeating;
+      setIsRepeating(next);
+      if (innerRef.current) {
+        innerRef.current.loop = next;
+      }
     };
 
     const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -303,6 +313,21 @@ const AudioPlayer = forwardRef<HTMLAudioElement, Props>(
           >
             <Repeat className="w-3.5 h-3.5" />
             Loop 5s
+          </button>
+
+          {/* Repeat */}
+          <button
+            aria-pressed={isRepeating}
+            aria-label="Repetir música"
+            onClick={toggleRepeat}
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              isRepeating
+                ? 'border-blue-400/70 bg-blue-500/20 text-blue-200'
+                : 'border-white/10 bg-white/5 text-slate-400 hover:text-blue-400'
+            }`}
+          >
+            <Repeat1 className="w-3.5 h-3.5" />
+            Repetir
           </button>
 
           {/* Speed */}
