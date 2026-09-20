@@ -1,43 +1,51 @@
 # NovaPlayer
 
-Player local de video e audio feito com React + Vite para revisar midia no navegador sem enviar arquivos para servidor.
+Local video and audio player built with React + Vite to review media in the browser without uploading files to a server.
 
-## O que o app faz
+## Screenshots
 
-- Importa arquivos locais de video e audio por clique ou drag and drop.
-- Reproduz video com controles customizados e preview na timeline.
-- Reproduz audio com interface dedicada.
-- Permite ajustar velocidade entre `0.5x` e `4x`.
-- Faz salto rapido de `5s` para frente e para tras.
-- Ativa loop dos ultimos `5s` para revisar trechos curtos.
-- Suporta fullscreen no player de video.
-- Suporta modo flutuante com `Picture-in-Picture` ao trocar de aba.
-- Mantem os arquivos no navegador usando `URL.createObjectURL`.
+![NovaPlayer video player](docs/screenshot.png)
 
-## Atalhos de teclado
+![NovaPlayer audio player with the repeat control](docs/screenshot-audio.png)
+
+## What the app does
+
+- Imports local video and audio files by click or drag and drop.
+- Plays video with custom controls and a timeline hover preview.
+- Plays audio through a dedicated player.
+- Repeats a single track with the full-track repeat toggle.
+- Adjusts playback speed between `0.5x` and `4x`.
+- Skips `5s` forward and backward.
+- Loops the last `5s` to review short segments.
+- Transcodes unsupported formats (`WMV`, `MPG`) to MP4 locally before playback.
+- Supports fullscreen in the video player.
+- Supports floating mode with `Picture-in-Picture` when switching tabs.
+- Keeps files in the browser using `URL.createObjectURL`.
+
+## Keyboard shortcuts
 
 ### Video
 
-- `Espaco`: play / pause
-- `Seta Esquerda`: voltar 5s
-- `Seta Direita`: avancar 5s
-- `Seta Cima`: aumentar velocidade
-- `Seta Baixo`: diminuir velocidade
-- `R`: resetar velocidade para `1x`
-- `F`: entrar ou sair de fullscreen
-- `L`: ligar ou desligar loop dos ultimos `5s`
-- `M`: mutar ou desmutar
+- `Space`: play / pause
+- `Left Arrow`: skip back 5s
+- `Right Arrow`: skip forward 5s
+- `Up Arrow`: increase speed
+- `Down Arrow`: decrease speed
+- `R`: reset speed to `1x`
+- `F`: enter or exit fullscreen
+- `L`: toggle loop of the last `5s`
+- `M`: mute or unmute
 
 ### Audio
 
-- `Espaco`: play / pause
-- `Seta Esquerda`: voltar 5s
-- `Seta Direita`: avancar 5s
-- `Seta Cima`: aumentar velocidade
-- `Seta Baixo`: diminuir velocidade
-- `R`: resetar velocidade para `1x`
-- `L`: ligar ou desligar loop dos ultimos `5s`
-- `M`: mutar ou desmutar
+- `Space`: play / pause
+- `Left Arrow`: skip back 5s
+- `Right Arrow`: skip forward 5s
+- `Up Arrow`: increase speed
+- `Down Arrow`: decrease speed
+- `R`: reset speed to `1x`
+- `L`: toggle loop of the last `5s`
+- `M`: mute or unmute
 
 ## Stack
 
@@ -50,19 +58,19 @@ Player local de video e audio feito com React + Vite para revisar midia no naveg
 - `Prettier`
 - `Husky` + `lint-staged`
 
-## Requisitos
+## Requirements
 
 - `Node.js`
 - `npm`
 
-## Rodando localmente
+## Running locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-Abra a URL mostrada pelo Vite, normalmente `http://localhost:5173`.
+Open the URL printed by Vite, usually `http://localhost:5173`.
 
 ## Scripts
 
@@ -76,19 +84,19 @@ npm run format:check
 npm run test
 ```
 
-## Testes e qualidade
+## Tests and quality
 
-O projeto possui:
+The project includes:
 
-- testes com `Vitest`
-- lint com `ESLint`
-- formatacao com `Prettier`
-- hook de pre-commit com `Husky` e `lint-staged`
+- tests with `Vitest`
+- lint with `ESLint`
+- formatting with `Prettier`
+- a pre-commit hook with `Husky` and `lint-staged`
 
-## Privacidade
+## Privacy
 
-Os arquivos selecionados sao processados localmente no navegador. O app nao faz upload da midia para backend.
+Selected files are processed locally in the browser. The app does not upload media to a backend.
 
 ## Deploy
 
-Existe configuracao de build para `Netlify` em [`netlify.toml`](./netlify.toml).
+Build configuration for `Netlify` lives in [`netlify.toml`](./netlify.toml).
