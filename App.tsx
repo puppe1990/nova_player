@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Loader2, Play, Zap, X } from 'lucide-react';
 import MultiVideoGrid from './components/MultiVideoGrid';
-import AudioPlayer from './components/AudioPlayer';
+import AudioTrackList from './components/AudioTrackList';
 import FileUpload from './components/FileUpload';
-import { VideoMetadata, AudioMetadata, MAX_VIDEOS } from './types';
+import PlayerSettingsMenu from './components/PlayerSettingsMenu';
+import { VideoMetadata, AudioMetadata } from './types';
 import {
   isVideoFile,
   isAudioFile,
@@ -12,6 +13,8 @@ import {
 } from './lib/mediaFile';
 import { prepareVideoPlayback } from './lib/prepareVideoPlayback';
 import { createVideoMetadata } from './lib/createVideoMetadata';
+import { getMediaLimit } from './lib/playerSettings';
+import { usePlayerSettings } from './lib/usePlayerSettings';
 
 function fileToAudioMetadata(file: File): AudioMetadata {
   return {
@@ -23,16 +26,21 @@ function fileToAudioMetadata(file: File): AudioMetadata {
 }
 
 const App: React.FC = () => {
+  const { settings, updateSettings } = usePlayerSettings();
+  const mediaLimit = getMediaLimit(settings);
+
   const [videos, setVideos] = useState<VideoMetadata[]>([]);
-  const [audio, setAudio] = useState<AudioMetadata | null>(null);
+  const [audios, setAudios] = useState<AudioMetadata[]>([]);
   const [activeVideoIndex, setActiveVideoIndex] = useState<number | null>(null);
+  const [activeAudioIndex, setActiveAudioIndex] = useState<number | null>(null);
   const [transcodingFile, setTranscodingFile] = useState<string | null>(null);
   const [transcodeProgress, setTranscodeProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const loadedItemCount = videos.length + audios.length;
+  const remainingSlots = Math.max(0, mediaLimit - loadedItemCount);
 
   const handleFilesSelect = async (files: File[]) => {
-    const remainingSlots = MAX_VIDEOS - videos.length;
     const allowed = files.slice(0, remainingSlots);
 
     for (const file of allowed) {
@@ -48,7 +56,7 @@ const App: React.FC = () => {
           );
 
           setVideos((prev) => {
-            if (prev.length >= MAX_VIDEOS) {
+            if (prev.length >= mediaLimit) {
               URL.revokeObjectURL(playback.url);
               return prev;
             }
@@ -70,8 +78,7 @@ const App: React.FC = () => {
           }
         }
       } else if (isAudioFile(file)) {
-        if (audio?.url) URL.revokeObjectURL(audio.url);
-        setAudio(fileToAudioMetadata(file));
+        setAudios((prev) => [...prev, fileToAudioMetadata(file)]);
       }
     }
   };
@@ -96,26 +103,44 @@ const App: React.FC = () => {
     setActiveVideoIndex(index);
   };
 
-  const handleAddVideo = () => {
-    fileInputRef.current?.click();
+  const handleRemoveAudio = (index: number) => {
+    setAudios((prev) => {
+      const audio = prev[index];
+      if (audio?.url) URL.revokeObjectURL(audio.url);
+
+      const next = prev.filter((_, i) => i !== index);
+      setActiveAudioIndex((current) => {
+        if (current === null) return null;
+        if (next.length === 0) return null;
+        if (current >= next.length) return next.length - 1;
+        return current;
+      });
+      return next;
+    });
   };
 
-  const clearAudio = () => {
-    if (audio?.url) URL.revokeObjectURL(audio.url);
-    setAudio(null);
+  const handleActivateAudio = (index: number) => {
+    setActiveAudioIndex(index);
+  };
+
+  const handleAddVideo = () => {
+    fileInputRef.current?.click();
   };
 
   const clearAll = () => {
     for (const video of videos) {
       if (video.url) URL.revokeObjectURL(video.url);
     }
+    for (const audio of audios) {
+      if (audio.url) URL.revokeObjectURL(audio.url);
+    }
     setVideos([]);
+    setAudios([]);
     setActiveVideoIndex(null);
-    clearAudio();
+    setActiveAudioIndex(null);
   };
 
-  const hasMedia = videos.length > 0 || audio;
-  const remainingSlots = MAX_VIDEOS - videos.length;
+  const hasMedia = videos.length > 0 || audios.length > 0;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
@@ -127,15 +152,18 @@ const App: React.FC = () => {
           <h1 className="text-xl font-bold tracking-tight">NovaPlayer</h1>
         </div>
 
-        {hasMedia && (
-          <button
-            onClick={clearAll}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-sm"
-          >
-            <X className="w-4 h-4" />
-            Remover Vídeos
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          <PlayerSettingsMenu settings={settings} onChange={updateSettings} />
+          {hasMedia && (
+            <button
+              onClick={clearAll}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-sm"
+            >
+              <X className="w-4 h-4" />
+              Remover Vídeos
+            </button>
+          )}
+        </div>
       </header>
 
       <main className="flex-1 flex flex-col lg:flex-row gap-6 p-6 max-w-[1600px] mx-auto w-full">
@@ -161,6 +189,7 @@ const App: React.FC = () => {
                 onActivateVideo={handleActivateVideo}
                 onRemoveVideo={handleRemoveVideo}
                 onAddVideo={remainingSlots > 0 ? handleAddVideo : undefined}
+                maxSlots={videos.length + remainingSlots}
               />
 
               {remainingSlots > 0 && videos.length > 0 && (
@@ -175,16 +204,18 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {audio && (
-                <div className="flex-1 flex items-center justify-center">
-                  <AudioPlayer
-                    src={audio.url}
-                    name={audio.name}
-                    size={`${audio.size} • ${audio.type}`}
-                    ref={audioRef}
-                  />
-                </div>
-              )}
+              <AudioTrackList
+                audios={audios}
+                activeAudioIndex={
+                  activeAudioIndex !== null && activeAudioIndex < audios.length
+                    ? activeAudioIndex
+                    : audios.length > 0
+                      ? 0
+                      : null
+                }
+                onActivateAudio={handleActivateAudio}
+                onRemoveAudio={handleRemoveAudio}
+              />
             </div>
           )}
         </div>

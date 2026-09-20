@@ -209,6 +209,59 @@ describe('App multi-video', () => {
     });
   });
 
+  describe('player settings', () => {
+    function storeSettings(multiEnabled: boolean, maxItems: number) {
+      window.localStorage.setItem(
+        'novaplayer.settings',
+        JSON.stringify({ multiEnabled, maxItems }),
+      );
+    }
+
+    it('loads only one media item when multi-media is disabled', async () => {
+      storeSettings(false, 4);
+      render(<App />);
+
+      await selectFiles([
+        createVideoFile('a.mp4'),
+        createVideoFile('b.mp4'),
+        createAudioFile('song.mp3'),
+      ]);
+
+      await waitForVideo('a.mp4');
+      expect(screen.queryByText('b.mp4')).toBeNull();
+      expect(screen.queryByText('song.mp3')).toBeNull();
+    });
+
+    it('loads multiple audio tracks when multi-media is enabled', async () => {
+      render(<App />);
+
+      await selectFiles([
+        createAudioFile('one.mp3'),
+        createAudioFile('two.mp3'),
+      ]);
+
+      await waitFor(() => {
+        expect(screen.getByText('one.mp3')).not.toBeNull();
+        expect(screen.getByText('two.mp3')).not.toBeNull();
+      });
+    });
+
+    it('honors the configured maximum number of items', async () => {
+      storeSettings(true, 2);
+      render(<App />);
+
+      await selectFiles([
+        createVideoFile('a.mp4'),
+        createVideoFile('b.mp4'),
+        createVideoFile('c.mp4'),
+      ]);
+
+      await waitForVideo('a.mp4');
+      expect(screen.getByText('b.mp4')).not.toBeNull();
+      expect(screen.queryByText('c.mp4')).toBeNull();
+    });
+  });
+
   describe('clear all', () => {
     it('clears all videos when header remove button is clicked', async () => {
       render(<App />);

@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import AudioPlayer from './AudioPlayer';
 
 function getAudioElement(): HTMLAudioElement {
@@ -29,5 +29,33 @@ describe('AudioPlayer repeat', () => {
     fireEvent.click(button);
 
     expect(getAudioElement().loop).toBe(false);
+  });
+});
+
+describe('AudioPlayer keyboard gating', () => {
+  afterEach(cleanup);
+
+  it('ignores the play shortcut when the player is not active', () => {
+    const play = vi
+      .spyOn(HTMLMediaElement.prototype, 'play')
+      .mockResolvedValue(undefined);
+
+    render(<AudioPlayer src="song.mp3" isActive={false} />);
+    fireEvent.keyDown(window, { key: ' ' });
+
+    expect(play).not.toHaveBeenCalled();
+    play.mockRestore();
+  });
+
+  it('handles the play shortcut when the player is active', () => {
+    const play = vi
+      .spyOn(HTMLMediaElement.prototype, 'play')
+      .mockResolvedValue(undefined);
+
+    render(<AudioPlayer src="song.mp3" isActive />);
+    fireEvent.keyDown(window, { key: ' ' });
+
+    expect(play).toHaveBeenCalled();
+    play.mockRestore();
   });
 });
