@@ -5,6 +5,7 @@ let mockUrlCounter = 0;
 
 beforeEach(() => {
   mockUrlCounter = 0;
+  window.localStorage.clear();
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     value: vi.fn(() => `blob:mock-${++mockUrlCounter}`),

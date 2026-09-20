@@ -21,10 +21,11 @@ interface Props {
   src: string;
   name?: string;
   size?: string;
+  isActive?: boolean;
 }
 
 const AudioPlayer = forwardRef<HTMLAudioElement, Props>(
-  ({ src, name, size }, ref) => {
+  ({ src, name, size, isActive = true }, ref) => {
     const innerRef = useRef<HTMLAudioElement>(null);
 
     useImperativeHandle(ref, () => innerRef.current!);
@@ -120,6 +121,8 @@ const AudioPlayer = forwardRef<HTMLAudioElement, Props>(
 
     // Keyboard Shortcuts
     useEffect(() => {
+      if (!isActive) return;
+
       const handleKeyDown = (e: KeyboardEvent) => {
         if (
           document.activeElement?.tagName === 'INPUT' ||
@@ -169,7 +172,7 @@ const AudioPlayer = forwardRef<HTMLAudioElement, Props>(
 
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [playbackRate, isMuted, isLoopingLastFive]);
+    }, [playbackRate, isMuted, isLoopingLastFive, isActive]);
 
     const formatTime = (time: number) => {
       const mins = Math.floor(time / 60);

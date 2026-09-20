@@ -1,7 +1,8 @@
 import React from 'react';
 import { X, Plus } from 'lucide-react';
 import VideoPlayer from './VideoPlayer';
-import { VideoMetadata, MAX_VIDEOS } from '../types';
+import { VideoMetadata } from '../types';
+import { DEFAULT_PLAYER_SETTINGS } from '../lib/playerSettings';
 
 interface Props {
   videos: VideoMetadata[];
@@ -9,6 +10,7 @@ interface Props {
   onActivateVideo: (index: number) => void;
   onRemoveVideo: (index: number) => void;
   onAddVideo?: () => void;
+  maxSlots?: number;
 }
 
 const gridCols: Record<number, string> = {
@@ -29,12 +31,13 @@ const MultiVideoGrid: React.FC<Props> = ({
   onActivateVideo,
   onRemoveVideo,
   onAddVideo,
+  maxSlots = DEFAULT_PLAYER_SETTINGS.maxItems,
 }) => {
   if (videos.length === 0 && !onAddVideo) {
     return null;
   }
 
-  const totalSlots = Math.max(videos.length, onAddVideo ? MAX_VIDEOS : 0);
+  const totalSlots = Math.max(videos.length, onAddVideo ? maxSlots : 0);
 
   if (totalSlots === 0) {
     return null;
@@ -43,7 +46,7 @@ const MultiVideoGrid: React.FC<Props> = ({
   return (
     <div
       data-testid="video-grid"
-      className={getGridClassName(videos.length || MAX_VIDEOS)}
+      className={getGridClassName(videos.length || maxSlots)}
     >
       {Array.from({ length: totalSlots }, (_, i) => {
         const video = videos[i] ?? null;
